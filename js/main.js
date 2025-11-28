@@ -1,3 +1,4 @@
+//IGNACIO MARTIN BRAVO
 import postCollection from "./postCollection.js";
 
 const form = document.getElementById("form");
@@ -11,6 +12,7 @@ const price = document.getElementById("Price");
 const sold = document.getElementById("Sold");
 const pets = document.getElementById("pets");
 const formButton = document.getElementById("Btn");
+const btnDelete = document.getElementById("delete");
 
 let editFlag = false;
 let postIdToUpdate;
@@ -27,11 +29,17 @@ let initialPosts = [
   },
 ];
 
-let collection = new postCollection(initialPosts);
+let savedPosts = localStorage.getItem("collection");
+
+let collection;
+if (savedPosts) {
+  collection = new postCollection(JSON.parse(savedPosts));
+} else {
+  collection = new postCollection(initialPosts);
+  localStorage.setItem("collection", JSON.stringify(collection.getAllPosts()));
+}
 
 displayPets(collection.getAllPosts());
-
-console.log(collection.getAllPosts());
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -57,6 +65,10 @@ form.addEventListener("submit", (event) => {
     if (newPostId) {
       console.log("Pet added with id " + newPostId);
     }
+    localStorage.setItem(
+      "collection",
+      JSON.stringify(collection.getAllPosts())
+    );
   }
 
   displayPets(collection.getAllPosts());
@@ -69,39 +81,24 @@ form.addEventListener("submit", (event) => {
   petCode.value = "";
 });
 
+btnDelete.addEventListener("click", (ev) => {
+  localStorage.setItem("collection", "");
+});
+
 const deletePost = (id) => {
-  console.log("Delete post: " + id);
   collection.deleteById(id);
+  localStorage.setItem("collection", JSON.stringify(collection.getAllPosts()));
   displayPets(collection.getAllPosts());
 };
 
 function formValidation() {
   let flag = true;
 
-  if (!validatePetName(petName)) {
-    console.log("Nombre de mascota no valido");
-    flag = false;
-  }
-
-  if (!validateImage(image)) {
-    console.log("imagen no valida");
-    flag = false;
-  }
-
-  if (!validatDate(birthdate)) {
-    console.log("birthday not valid");
-    flag = false;
-  }
-
-  if (!validatePrice(price)) {
-    console.log("Price not valid");
-    flag = false;
-  }
-
-  if (!validatePetCode(petCode)) {
-    console.log("PetCode not valid");
-    flag = false;
-  }
+  if (!validatePetName(petName)) flag = false;
+  if (!validateImage(image)) flag = false;
+  if (!validatDate(birthdate)) flag = false;
+  if (!validatePrice(price)) flag = false;
+  if (!validatePetCode(petCode)) flag = false;
 
   return flag;
 }
@@ -109,7 +106,6 @@ function formValidation() {
 function validatePetName(input) {
   if (input.value.length < 1) {
     input.parentElement.classList.add("is-not-valid-field");
-    console.log("No valido");
     return false;
   } else {
     input.parentElement.classList.remove("is-not-valid-field");
@@ -120,21 +116,10 @@ function validatePetName(input) {
 function validateImage(input) {
   const imageRegex = /.(jpg|jpeg|png|gif|bmp|webp)$/i;
   const url = input.value.trim();
-  if (input.value.length < 1) {
-    input.parentElement.classList.add("is-not-valid-field");
-    console.log("invalido");
-    return false;
-  } else {
-    console.log("valido");
-    input.parentElement.classList.remove("is-not-valid-field");
-  }
-
-  if (!imageRegex.test(url)) {
-    console.log("invalido");
+  if (input.value.length < 1 || !imageRegex.test(url)) {
     input.parentElement.classList.add("is-not-valid-field");
     return false;
   } else {
-    console.log("valido");
     input.parentElement.classList.remove("is-not-valid-field");
     return true;
   }
@@ -142,71 +127,38 @@ function validateImage(input) {
 
 function validatDate(input) {
   let fecha = input.valueAsDate;
-  console.log(fecha);
-
   let hoy = Date.now();
-
-  if (input.value.length < 1) {
+  if (input.value.length < 1 || fecha > hoy) {
     input.parentElement.classList.add("is-not-valid-field");
-    console.log("invalido");
     return false;
   } else {
-    console.log("valido");
     input.parentElement.classList.remove("is-not-valid-field");
-    console.log(hoy);
-    console.log(fecha);
-    if (fecha > hoy) {
-      input.parentElement.classList.add("is-not-valid-field");
-      return false;
-    } else {
-      input.parentElement.classList.remove("is-not-valid-field");
-      return true;
-    }
+    return true;
   }
 }
 
 function validatePrice(input) {
-  if (input.value.length < 1) {
+  if (input.value.length < 1 || input.value <= 0) {
     input.parentElement.classList.add("is-not-valid-field");
-    console.log("invalido");
     return false;
   } else {
-    console.log("valido");
     input.parentElement.classList.remove("is-not-valid-field");
-
-    if (input.value <= 0) {
-      input.parentElement.classList.add("is-not-valid-field");
-      return false;
-    } else {
-      input.parentElement.classList.remove("is-not-valid-field");
-      return true;
-    }
+    return true;
   }
 }
 
 function validatePetCode(input) {
   const petCodeRegex = /^[A-Z]+(?: [A-Z]+)*\d{3}$/;
-  if (input.value.length < 1) {
+  if (input.value.length < 1 || !petCodeRegex.test(input.value)) {
     input.parentElement.classList.add("is-not-valid-field");
-    console.log("invalido");
     return false;
   } else {
-    console.log("valido");
     input.parentElement.classList.remove("is-not-valid-field");
-    if (!petCodeRegex.test(input.value)) {
-      console.log(petCodeRegex.test(input.value));
-      input.parentElement.classList.add("is-not-valid-field");
-      return false;
-    } else {
-      input.parentElement.classList.remove("is-not-valid-field");
-      return true;
-    }
+    return true;
   }
 }
 
 const editPost = (id) => {
-  let postIndex;
-  console.log("Edit post: " + id);
   editFlag = true;
   postIdToUpdate = id;
 
@@ -214,7 +166,7 @@ const editPost = (id) => {
   petName.value = postInfo.PetName;
   description.value = postInfo.Description;
   image.value = postInfo.Image;
-  birthdate.value = new Date(postInfo.Birthdate).toISOString().split("T")[0]; // Proper format for input[type=date];
+  birthdate.value = new Date(postInfo.Birthdate).toISOString().split("T")[0];
   price.value = postInfo.Price;
   petCode.value = postInfo.PetCode;
   sold.checked = postInfo.Sold;
@@ -224,10 +176,7 @@ const editPost = (id) => {
 
 function updatePet(code) {
   const existingPet = collection.findById(code);
-  if (!existingPet) {
-    console.log("No se encontró la mascota con código " + code);
-    return;
-  }
+  if (!existingPet) return;
 
   const updatedPet = {
     PetName: petName.value,
@@ -240,8 +189,7 @@ function updatePet(code) {
   };
 
   collection.updatePost(updatedPet);
-
-  console.log("Mascota actualizada:", updatedPet);
+  localStorage.setItem("collection", JSON.stringify(collection.getAllPosts()));
 
   editFlag = false;
   formButton.textContent = "Add";
@@ -252,55 +200,48 @@ function updatePet(code) {
 
 function changeSold(petCode) {
   const post = collection.findById(petCode);
-
-  if (!post) {
-    console.log("No se encontró mascota con código " + petCode);
-    return;
-  }
+  if (!post) return;
 
   post.Sold = !post.Sold;
-
   collection.updatePost(post);
+  localStorage.setItem("collection", JSON.stringify(collection.getAllPosts()));
 
   displayPets(collection.getAllPosts());
 }
 
 function displayPets(posts) {
   pets.innerHTML = "";
-  let message = "";
-
   posts.forEach((element) => {
-    message = element.Sold ? "sold" : "not sold";
-
+    let message = element.Sold ? "sold" : "not sold";
     pets.innerHTML += `
       <div class="col">
-        <div class="card" id="petCard">
+        <div class="card">
           <div class="card__media">
-            <img id="petImage" src="${element.Image}" alt="Imagen de la mascota" default="descarga.jpg">
+            <img src="${element.Image}" alt="Imagen de la mascota" default="descarga.jpg">
           </div>
           <div class="card__body">
             <div class="meta">
               <div>
-                <div class="pet-name" id="petName">${element.PetName}</div>
-                <div class="desc" id="petDesc">${element.Description}</div>
+                <div class="pet-name">${element.PetName}</div>
+                <div class="desc">${element.Description}</div>
               </div>
-              <div class="badge" id="petStatus">${message}</div>
+              <div class="badge">${message}</div>
             </div>
             <div class="row">
               <div class="muted">Nacimiento</div>
-              <div class="muted" id="petBirth">${element.Birthdate}</div>
+              <div class="muted">${element.Birthdate}</div>
             </div>
             <div class="row">
               <div class="muted">Código</div>
-              <div class="code" id="petCode">${element.PetCode}</div>
+              <div class="code">${element.PetCode}</div>
             </div>
             <div class="row" style="margin-top:10px;">
               <div class="muted">Precio</div>
-              <div class="price" id="petPrice">${element.Price}</div>
+              <div class="price">${element.Price}</div>
             </div>
           </div>
           <div class="card__footer">
-            <button class="btn btn--primary editBtn" id="buyBtn" data-code="${element.PetCode}" >Edit</button>
+            <button class="btn btn--primary editBtn" data-code="${element.PetCode}">Edit</button>
             <button class="btn btn--outline toggleSoldBtn" data-code="${element.PetCode}">Toggle Sold</button>
             <button class="btn btn--outline delete" data-code="${element.PetCode}">Delete</button>
           </div>
@@ -309,25 +250,19 @@ function displayPets(posts) {
     `;
   });
 
-  // Activar los botones de toggle
   document.querySelectorAll(".toggleSoldBtn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const code = btn.getAttribute("data-code");
-      changeSold(code);
-    });
+    btn.addEventListener("click", () =>
+      changeSold(btn.getAttribute("data-code"))
+    );
   });
-
   document.querySelectorAll(".editBtn").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const code = btn.getAttribute("data-code");
-      editPost(code);
-    });
+    btn.addEventListener("click", () =>
+      editPost(btn.getAttribute("data-code"))
+    );
   });
-
   document.querySelectorAll(".delete").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const code = btn.getAttribute("data-code");
-      deletePost(code);
-    });
+    btn.addEventListener("click", () =>
+      deletePost(btn.getAttribute("data-code"))
+    );
   });
 }

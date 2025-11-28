@@ -168,3 +168,7 @@ input {
   border: 1px solid #6b8cff;
   color: #6b8cff;
 }
+
+.text-center {
+  text-align: center;
+}
